@@ -1,15 +1,25 @@
 --102831215 Dawei Li
 
 /*
-SUBJECT (SUBJECODE, DESCRIPTION)
-PK(SUBJECODE)
+SSubject(SubjCode, Description)
+Tacher(StaffID, Surname, GivenName)
+SubjectOffering(Year, Semester, Fee, SubjCode, StaffID)
+Primary Key (StaffID, Year, Semester)
+Foreign Key (SubjCode) References Subject
+Foreign Key (StaffID) References Teacher
+Student(StudentID, Surname, GivenName, Gender)
+Enrolment(DateEnrolled, Grade, Year, Semester, StudentID, StaffID, Year, Semester)
+Primary Key (SubjCode, Year, Semester, StudentID)
+Foreign Key (StaffID, Year, Semester) References SubjectOffering
+Foreign Key (StudentID) References Student
+
 
 
 
 
 
 */
-drop table if exists Enrolment;
+drop table if exists Enrollment;
 drop table if exists SubjectOffering;
 drop table if exists subject;
 drop table if exists student;
@@ -51,7 +61,7 @@ CREATE TABLE Enrollment (
 , Semester int
 , DateEnrolled DATETIME
 , Grade nvarchar(2)
-, PRIMARY KEY (StudentID)
+, PRIMARY KEY (StudentID, SubjCode, Year, Semester)
 , FOREIGN KEY (StudentID) REFERENCES Student
 , FOREIGN KEY (SubjCode, Year, Semester) REFERENCES SubjectOffering
 );
@@ -99,7 +109,7 @@ Semester, DateEnrolled, Grade)
 VALUES ('s23344556', 'ICTWEB425', 2018, 1, NULL, 'P');
 INSERT INTO Enrollment (StudentID, SubjCode, Year,
 Semester, DateEnrolled, Grade)
-VALUES ('s1223344', 'ICTWEB425', 2019, 1, NULL, 'C');
+VALUES ('s12233445', 'ICTWEB425', 2019, 1, NULL, 'C');
 INSERT INTO Enrollment (StudentID, SubjCode, Year,
 Semester, DateEnrolled, Grade)
 VALUES ('s23344556', 'ICTWEB425', 2019, 1, NULL, 'HD');
@@ -108,7 +118,7 @@ Semester, DateEnrolled, Grade)
 VALUES ('s34455667', 'ICTWEB425', 2019, 1, NULL, 'P');
 INSERT INTO Enrollment (StudentID, SubjCode, Year,
 Semester, DateEnrolled, Grade)
-VALUES ('s1223344', 'ICTDBS403', 2019, 1, NULL, 'C');
+VALUES ('s12233445', 'ICTDBS403', 2019, 1, NULL, 'C');
 INSERT INTO Enrollment (StudentID, SubjCode, Year,
 Semester, DateEnrolled, Grade)
 VALUES ('s23344556', 'ICTDBS403', 2019, 2, NULL, NULL);
@@ -122,7 +132,71 @@ INSERT INTO Enrollment (StudentID, SubjCode, Year,
 Semester, DateEnrolled, Grade)
 VALUES ('s34455667', 'ICTDBS502', 2018, 2, NULL, 'N');
 
+SELECT S.GivenName, S.Surname, E.SubjCode, 
+Su.Description, E.Year, E.Semester, SO.Fee,
+T.GivenName, T.Surname
+FROM Student S 
+INNER JOIN Enrollment E
+ON E.StudentID = S.StudentID
+INNER JOIN SubjectOffering SO
+ON E.SubjCode = SO.SubjCode
+AND E.Year = SO.Year
+AND E.Semester = SO.semester
+INNER JOIN Subject Su
+ON SO.SubjCode = Su.SubjCode
+Inner JOIN Teacher T
+ON SO.StaffID = T.StaffID;
+
+SELECT Year, Semester, count(StudentID) AS Num_Enrollments
+FROM Enrollment
+GROUP BY Year, Semester;
+
+SELECT *
+FROM SubjectOffering SO
+INNER JOIN Subject S
+ON SO.SubjCode = S.SubjCode
+WHERE Fee = (SELECT MAX(Fee)  
+FROM SubjectOffering 
+WHERE SO.SubjCode = S.SubjCode);
 
 
+SELECT SubjCode, Max(Fee) AS MAX  
+FROM SubjectOffering 
+GROUP BY SubjCode;　
 
 
+SELECT *
+FROM SubjectOffering
+WHERE Fee = (SELECT MAX(Fee)  
+FROM SubjectOffering );
+
+SELECT SO.* 
+FROM SubjectOffering SO,
+(SELECT SubjCode,Max(Fee) AS MAX  
+FROM SubjectOffering GROUP BY SubjCode) S1
+WHERE SO.SubjCode = S1.SubjCOde AND SO.Fee = S1.MAX;
+
+SELECT SO.*
+FROM SubjectOffering SO
+INNER JOIN (SELECT SubjCode, Max(Fee) AS MAX  FROM SubjectOffering 
+GROUP BY SubjCode) S1
+ON SO.SubjCOde = S1.SubjCode AND SO.Fee = S1.MAX;
+
+
+CREATE VIEW View1 AS
+SELECT S.GivenName, S.Surname, E.SubjCode, 
+Su.Description, E.Year, E.Semester, SO.Fee,
+T.GivenName AS TGivenName, T.Surname AS TSurname
+FROM Student S 
+INNER JOIN Enrollment E
+ON E.StudentID = S.StudentID
+INNER JOIN SubjectOffering SO
+ON E.SubjCode = SO.SubjCode
+AND E.Year = SO.Year
+AND E.Semester = SO.semester
+INNER JOIN Subject Su
+ON SO.SubjCode = Su.SubjCode
+Inner JOIN Teacher T
+ON SO.StaffID = T.StaffID;
+
+SELECT * FROM VIEW1;
